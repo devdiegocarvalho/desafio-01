@@ -2,10 +2,37 @@ const express = require("express");
 
 const app = express();
 
-const projects = [];
+const projects = [
+  {
+    id: "1",
+    title: "MyProject",
+    task: []
+  }
+];
+let numberReq = 0;
 
 // Leitura de JSON no request body.
 app.use(express.json());
+
+// Middleware global contagem de requisições.
+app.use((req, res, next) => {
+  numberReq++;
+  console.log(`Número de requisições: ${numberReq}`);
+
+  return next();
+});
+
+//Middleware verifica se o projeto existe.
+function checkProjectExists(req, res, next) {
+  const projectId = req.params.id;
+  const checkIdProject = projects.find(p => p.id == projectId);
+
+  if (!checkIdProject) {
+    res.status(400).json({ message: "project do not exists" });
+  }
+
+  return next();
+}
 
 // Rota para registrar novo projeto.
 app.post("/projects", (req, res) => {
@@ -21,13 +48,13 @@ app.post("/projects", (req, res) => {
   res.json(projects);
 });
 
-// Rota que lista todos os projetos armazenados.
+// Rota para listar todos os projetos armazenados.
 app.get("/projects", (req, res) => {
   return res.json(projects);
 });
 
-// Rota que permite a edição do título do projeto, refenciando pelo ID.
-app.put("/projects/:id", (req, res) => {
+// Rota para editar título do projeto, refenciando pelo ID.
+app.put("/projects/:id", checkProjectExists, (req, res) => {
   const { id } = req.params;
   const { title } = req.body;
 
@@ -37,7 +64,7 @@ app.put("/projects/:id", (req, res) => {
   return res.json(newProject);
 });
 
-// Deleta o projeto referenciando pelo ID.
+// Rota para deletar o projeto referenciando pelo ID.
 app.delete("/projects/:id", (req, res) => {
   const { id } = req.params;
 
